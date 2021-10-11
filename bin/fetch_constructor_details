@@ -1,0 +1,66 @@
+#!/bin/bash
+
+log() {
+  echo "* [${2:-INFO}] $1"
+}
+
+die() {
+  log >&2 "$1" "ERROR"
+  exit 1
+}
+
+get_state_value() {
+    state_value=$(tf -e $env -l project -a state  -x "show $1" | egrep "^$2 *=" | awk  '{ print $3 }')
+}
+
+# Set directory variables
+PACKER_DIR=$(find ../..  -type d -name sid-packer)
+TERRAFORM_DIR=$(find ../..  -type d -name sid-terraform)
+
+# Get arguments
+while getopts ':e:' OPT; do
+  case ${OPT} in
+    e) env=${OPTARG} ;;
+  esac
+done
+
+## Usage
+HELP="
+  usage: $0 [ -e value ]
+    -e --> environment: dev, ci
+"
+
+# Test inputs
+if [[ -z "$env" ]]; then
+  echo "$HELP"
+  die "Required environment arg not entered"
+fi
+
+# Set working directory and prep env
+pushd ${TERRAFORM_DIR} 2>&1 > /dev/null
+. .envrc
+
+get_state_value "module.vpc.aws_vpc.vpc_aspect" "id"
+PACKER_VPC=$state_value
+
+get_state_value "module.project_subnet.aws_subnet.public_subnets[2]" "id"
+PACKER_SUBNET=$state_value
+
+get_state_value "aws_s3_bucket.infrastructure" "region"
+REGION=$state_value
+
+PACKER_DATE=$(date "+%Y-%m-%d-%H-%M")
+
+if [[ -z "$PACKER_VPC" ]] || [[ -z "$PACKER_SUBNET" ]]; then
+    die "Failed to fetch VPC or SubNet details"
+fi
+
+echo "{
+  \"VPC_ID\": \"${PACKER_VPC}\",
+  \"BUILD_SUBNET_ID\": \"${PACKER_SUBNET}\",
+  \"AMI_VERSION\": \"${PACKER_DATE}\",
+  \"AWS_REGION\": \"${REGION}\"
+}" | tee ${PACKER_DIR}/environment/${env}.json
+
+
+popd 2>&1 > /dev/null

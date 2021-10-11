@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# Share AMI with accounts ID2 and ID2
+#
+
+declare -a amis=($@)
+
+if [[ ${#amis} -lt 1 ]]; then
+  echo 'You must specify the AMI ID(s) to share, e.g.:'
+  echo
+  echo "$0 ami-123456 ami-987654"
+  exit 0
+fi
+
+read -r -d '' json <<JSON
+{
+  "Add": [
+    {
+      "UserId": "328928224910"
+    },
+    {
+      "UserId": "569913196535"
+    }
+  ]
+}
+JSON
+
+for ami in ${amis[@]}; do
+  aws ec2 modify-image-attribute \
+    --image-id $ami \
+    --launch-permission "$json"
+done

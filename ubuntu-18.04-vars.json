@@ -1,0 +1,11 @@
+{
+  "COSTCENTRE": "PD4523",
+  "NAME": "Ubuntu_18.04",
+  "PROFILE_NAME": "constructor-role",
+  "INSTANCE_TYPE": "t2.small",
+  "SSH_USER": "ubuntu",
+  "OS_FLAVOUR": "ubuntu",
+  "OS_RELEASE": "18.04",
+  "SCRIPT_DIR": "/home/ubuntu",
+  "ANSIBLE_ROOT": "sid-ansible"
+}

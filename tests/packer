@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#
+# This runs the following against changed files:
+#
+# - jq
+#
+
+[[ $TRACE ]] && set -x
+
+git_root=$(git rev-parse --show-toplevel)
+diff_cmd="git diff --cached --name-only --diff-filter=ACM" # All changed and staged files
+errors=0
+
+# under jenkins, get the changes from the last commit
+if [[ $JENKINS_HOME ]]; then
+  diff_cmd="git diff HEAD^ HEAD --name-only"
+fi
+
+cd $git_root
+
+# required tool
+which jq >/dev/null \
+  || { echo "You need to install 'jq'"; exit 1; }
+
+declare -a changed_files=$(
+  $diff_cmd |\
+    grep .json
+)
+
+# all files
+cd $git_root
+for file in ${changed_files[@]}; do
+  if [[ -f $file ]]; then
+      echo "Running jq for file: $file"
+      jq . $file >/dev/null
+      if [[ "$?" -ne 0 ]]; then
+        echo -e "'jq' failed for file: $file!\n"
+        ((errors=errors+1))
+      fi
+  fi
+done
+
+# Output the number of errors and quit if any found
+if [[ "$errors" -ne 0 ]]; then
+  echo
+  echo "$errors error(s) found!"
+  exit 1
+fi

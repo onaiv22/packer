@@ -1,0 +1,11 @@
+{
+  "COSTCENTRE": "PD4523",
+  "NAME": "Centos 7",
+  "PROFILE_NAME": "constructor-role",
+  "INSTANCE_TYPE": "t2.small",
+  "SSH_USER": "centos",
+  "OS_FLAVOUR": "centos",
+  "OS_RELEASE": "7",
+  "SCRIPT_DIR": "/home/centos",
+  "ANSIBLE_ROOT": "sid-ansible"
+}
